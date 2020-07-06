@@ -1,19 +1,23 @@
 This is the R Skript corresponding to the Bachelor Thesis “Analysis of
-Collisions with Cyclist Participation by Regional Typology in Germany”
-by the author Lasse Harkort. In the first section the functions for
-downloading and processing collision data from the collision dataset of
-the German Federal Statistical Office will be presented and explained
-step by step. The sections that follow represent the workflow for all
-statistics and graphs that are included in the thesis.To run the full
-script at once **you will need the folder with some additional data**
+Collisions with Cyclist Participation by Regional Typology in Germany”.
+In the first section the functions for downloading and processing
+collision data from the collision dataset of the German Federal
+Statistical Office will be presented and explained step by step. The
+sections that follow represent the workflow for all statistics and
+graphs that are included in the thesis. To run the full script at once
+**you will need the b\_osm.xlsx file** provided in the GitHub repository
+[Analysis of Collisions with Cyclist Participation by Regional Typology
+in Germany Code
+Documentation](https://github.com/lutzhutz/Analysis-of-Collisions-with-Cyclist-Participation-by-Regional-Typology-in-Germany-Code-Documentation)
 starting from the section *“Nearest road maximum speed limit”* as some
 of the steps have been made in the software QGIS.
 
 Note: The library
 [collisionsDE](https://github.com/lutzhutz/collisionsDE) is a self
-written library by the author
+written library by the author. The Bachelor Thesis is available at
+<a href="https://www.researchgate.net/profile/Lasse_Harkort" class="uri">https://www.researchgate.net/profile/Lasse_Harkort</a>.
 
-**Libraries**
+\#Libraries
 
 ``` r
 library("devtools")# for downloading GitHub packages
@@ -73,9 +77,10 @@ library(tidyr)
 library(stringr)
 library(ggpubr)
 library(grid)
+library(readxl)
 ```
 
-Legend (chronologically):
+Legend for data name extensions (chronologically):
 
 -   y.\#\# = year (e.g. 2018 -\> y.18)
 -   .df = data frame of all collisions
@@ -207,7 +212,7 @@ round(y.18.f$acc_persb, 1) #round the numbers to the first decimal
     ## [1] 14.2 13.8  8.5  4.9 13.0  8.2  4.8
 
 ``` r
-cor.test(y.18.f$popdens, y.18.f$acc_pers, method = "pearson") #calculate correlation
+cor.test(y.18.f$popdens, y.18.f$acc_pers, method = "pearson") #calculate Pearson correlation
 ```
 
     ## 
@@ -223,7 +228,7 @@ cor.test(y.18.f$popdens, y.18.f$acc_pers, method = "pearson") #calculate correla
     ## 0.6264673
 
 ``` r
-cor.test(y.18.f$popdens, y.18.f$acc_persb, method = "pearson") #calculate correlation
+cor.test(y.18.f$popdens, y.18.f$acc_persb, method = "pearson") #calculate Pearson correlation
 ```
 
     ## 
@@ -888,7 +893,6 @@ y.18.df.b.w <- y.18.df.b %>%
 w <- ggplot(y.18.df.b.w,
             aes(UWOCHENTAG, share, group = regio7bez, color = regio7bez)) +
   geom_line(size = 0.5) +
-  #geom_point() +
   theme_bw() +
   ggtitle("Weekdays") +
   scale_x_discrete(
@@ -1115,14 +1119,15 @@ The steps undertaken in QGIS were as follows:
     expression)
 5.  use algorithm “join by nearest location” for bicycle crash data to
     osm highway Germany (“join by nearest location”)
-6.  export as .csv
+6.  export as .csv, the .csv was then imported to excel and saved as
+    .xslx in order to minimize the data size
 
-\#Nearest road maximum speed limit
+\#Nearest road maximum speed limit **works only with b\_osm.xslx file!**
 
 ``` r
-#here, the processed file provided in the folder needs to be put into your workspace (if you prefer to have it elsewhere the read.csv needs to be updated as well)
+#here, the b_osm.xslx file provided in the GitHub repository needs to be put into your workspace (if you prefer to have it elsewhere the read.csv needs to be updated as well)
 y.18.df.b.osm <-
-  read.csv("./b_osm.csv")
+  read_excel("./b_osm.xlsx")
 
 #all 252 points that have been found to be the same distance to two line segments are dropped
 y.18.df.b.osm.s <-
@@ -1337,9 +1342,9 @@ regio7bez <-
   )
 
 Work <-
-  c(26, 25, 22, 18, 23, 23, 17) #data from Mobilität in Tabellen https://mobilitaet-in-tabellen.dlr.de/mit/ , Zeile: Hauptzweck des Weges, Spalte: Zusammengefasster regionalsttistischer Raumtyp, Untergliederung: Verkehrsmittel (Mehrfachantworten-Set))
+  c(26, 25, 22, 18, 23, 23, 17) #data from Mobilität in Tabellen https://mobilitaet-in-tabellen.dlr.de/mit/ , Zeile: Hauptzweck des Weges, Spalte: Zusammengefasster regionalsttistischer Raumtyp, Untergliederung: Verkehrsmittel (Mehrfachantworten-Set) [Accessed: 05.07.2020])
 Leisure <-
-  c(30, 32, 32, 37, 30, 32, 41) #data from Mobilität in Tabellen https://mobilitaet-in-tabellen.dlr.de/mit/, Zeile: Hauptzweck des Weges, Spalte: Zusammengefasster regionalsttistischer Raumtyp, Untergliederung: Verkehrsmittel (Mehrfachantworten-Set))
+  c(30, 32, 32, 37, 30, 32, 41) #data from Mobilität in Tabellen https://mobilitaet-in-tabellen.dlr.de/mit/, Zeile: Hauptzweck des Weges, Spalte: Zusammengefasster regionalsttistischer Raumtyp, Untergliederung: Verkehrsmittel (Mehrfachantworten-Set) [Accessed: 05.07.2020])
 
 #create dataframe
 df.commuting <- data.frame(regio7bez, Work, Leisure)
@@ -1347,7 +1352,7 @@ df.commuting <- df.commuting %>%
   pivot_longer(c(Work, Leisure))
 
 #visualize (Figure 14 in the thesis)
-ggplot(transform(df.commuting,
+purpose<-ggplot(transform(df.commuting,
                  regio7bez = factor(
                    regio7bez,
                    levels =
@@ -1386,11 +1391,20 @@ ggplot(transform(df.commuting,
     strip.text = element_text(color = 'black', size = 10, face = "italic"),
     strip.background = element_blank()
   )
+
+#add footnote to ggplot graph
+print(purpose)
+grid.text(
+  paste0("*u=urban, r=rural"),
+  x = 0.87,
+  y = 0.12,
+  just = "left",
+  gp = gpar(fontsize = 10)
+)
 ```
 
 ![](Thesis_Code_Documentation_files/figure-markdown_github/unnamed-chunk-12-1.png)
 
 ``` r
-#save image in workspace
-#ggsave("leisure_work.png",width = 8.79,height = 4.23, dpi = 300)
+#export:Save as image .. 860x404
 ```
